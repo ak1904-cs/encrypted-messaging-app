@@ -1,35 +1,88 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Encrypted Messaging App Test</title>
+  <title>Encrypted Messaging App</title>
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
-  <h1>Encrypted Messaging App Test</h1>
-  <ul id="messages"></ul>
-  <input id="messageInput" autocomplete="off" /><button onclick="sendMessage()">Send</button>
+  <h1>Encrypted Messaging App</h1>
+
+  <div id="auth">
+    <h2>Register</h2>
+    <input id="regUsername" placeholder="Username" />
+    <input id="regPassword" type="password" placeholder="Password" />
+    <button onclick="register()">Register</button>
+
+    <h2>Login</h2>
+    <input id="loginUsername" placeholder="Username" />
+    <input id="loginPassword" type="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+  </div>
+
+  <div id="chat" style="display:none;">
+    <h2>Chat</h2>
+    <ul id="messages"></ul>
+    <input id="messageInput" autocomplete="off" />
+    <button onclick="sendMessage()">Send</button>
+    <button onclick="logout()">Logout</button>
+  </div>
 
   <script>
     const socket = io();
-    const SECRET_KEY = "ak1904"; // For demo only
+    let token = null;
+    const SECRET_KEY = "ak1904"; // per-user key (demo)
 
+    // ---------------- AUTH -----------------
+    async function register() {
+      const username = document.getElementById('regUsername').value;
+      const password = document.getElementById('regPassword').value;
+      const res = await fetch('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+    }
+
+    async function login() {
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if(data.token) {
+        token = data.token;
+        document.getElementById('auth').style.display = 'none';
+        document.getElementById('chat').style.display = 'block';
+      } else {
+        alert(data.error);
+      }
+    }
+
+    function logout() {
+      token = null;
+      document.getElementById('auth').style.display = 'block';
+      document.getElementById('chat').style.display = 'none';
+      document.getElementById('messages').innerHTML = '';
+    }
+
+    // ---------------- CHAT -----------------
     function sendMessage() {
       const input = document.getElementById('messageInput');
       const msg = input.value;
-
-      // Encrypt the message
       const encrypted = CryptoJS.AES.encrypt(msg, SECRET_KEY).toString();
       socket.emit('chat message', encrypted);
-
       input.value = '';
     }
 
-    // Listen for messages and decrypt them
     socket.on('chat message', function(encryptedMsg){
       const bytes  = CryptoJS.AES.decrypt(encryptedMsg, SECRET_KEY);
       const msg = bytes.toString(CryptoJS.enc.Utf8);
-
       const li = document.createElement('li');
       li.textContent = msg;
       document.getElementById('messages').appendChild(li);
