@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Encrypted Messaging App Test</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+  <h1>Encrypted Messaging App Test</h1>
+  <ul id="messages"></ul>
+  <input id="messageInput" autocomplete="off" /><button onclick="sendMessage()">Send</button>
+
+  <script>
+    const socket = io();
+    const SECRET_KEY = "ak1904"; // For demo only
+
+    function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const msg = input.value;
+
+      // Encrypt the message
+      const encrypted = CryptoJS.AES.encrypt(msg, SECRET_KEY).toString();
+      socket.emit('chat message', encrypted);
+
+      input.value = '';
+    }
+
+    // Listen for messages and decrypt them
+    socket.on('chat message', function(encryptedMsg){
+      const bytes  = CryptoJS.AES.decrypt(encryptedMsg, SECRET_KEY);
+      const msg = bytes.toString(CryptoJS.enc.Utf8);
+
+      const li = document.createElement('li');
+      li.textContent = msg;
+      document.getElementById('messages').appendChild(li);
+    });
+  </script>
+</body>
+</html>
