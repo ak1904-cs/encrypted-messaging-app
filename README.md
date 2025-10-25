@@ -45,5 +45,3 @@ http://localhost:3000
 ## Contributing
 Contributions are welcome. Open an issue to discuss changes or submit a pull request with a clear description of the change and why it's needed.
 
-## License
-Add a LICENSE file to the repository to clearly state the project license.
